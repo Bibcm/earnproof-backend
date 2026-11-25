@@ -4802,3 +4802,108 @@ model ContractEventApplied {
   @@id([streamKey, eventId])
   @@index([streamKey, ledger])
 }
+
+// ---------------------------------------------------------------------------
+// User privacy request lifecycle (#402)
+// ---------------------------------------------------------------------------
+
+/// The kind of privacy request a user may submit. Closed taxonomy so the
+/// verification API can disclose the request type without free-form input.
+enum PrivacyRequestType {
+  /// Right to access / obtain a copy of personal data.
+  ACCESS
+  /// Right to rectify inaccurate personal data.
+  CORRECTION
+  /// Right to restrict processing of personal data.
+  RESTRICTION
+  /// Right to receive personal data in a portable format.
+  EXPORT
+  /// Right to erasure ("right to be forgotten").
+  DELETION
+}
+
+/// Lifecycle of a privacy request. Terminal states: COMPLETED, REJECTED,
+/// EXPIRED, CANCELLED. A request may only move forward through verified,
+/// bounded transitions.
+enum PrivacyRequestStatus {
+  PENDING
+  IDENTITY_VERIFICATION
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+/// One user-submitted privacy request. Tenant-scoped to `userId`: queries
+/// always filter by the authenticated user, so one user can never discover
+/// another user's request. Raw reasons and raw result data are never stored
+/// here — only SHA-256 commitments — so the ledger is auditable without
+/// retaining personal data.
+model PrivacyRequest {
+  id               String                @id @default(cuid())
+  userId           String
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId   String?
+  organization     Organization?         @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  type             PrivacyRequestType
+  status           PrivacyRequestStatus  @default(PENDING)
+  /// sha256 commitment to the requester's stated reason; raw reason never stored.
+  reasonCommitment String                  @db.Char(64)
+  /// Server-set deadline by which the request must reach a terminal state.
+  deadlineAt       DateTime
+  /// Identity verification result, set when identity is verified.
+  identityVerified Boolean               @default(false)
+  identityVerifiedAt DateTime?
+  identityVerifiedById String?
+  /// sha256 commitment to the delivered result; raw result never stored.
+  deliveryHash     String?
+  deliveredAt      DateTime?
+  /// When the request record itself may be purged (retention bound).
+  retainUntil      DateTime
+  revokedAt        DateTime?
+  revokedById      String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  evidence         PrivacyRequestEvidence[]
+  deliveries       PrivacyRequestDelivery[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([status, deadlineAt])
+  @@index([retainUntil])
+}
+
+/// Append-only evidence submitted for a privacy request. Stores only a
+/// content commitment and bounded metadata — never the raw evidence.
+model PrivacyRequestEvidence {
+  id            String   @id @default(cuid())
+  requestId     String
+  request       PrivacyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  /// SHA-256 commitment to evidence content; raw evidence never stored.
+  contentHash   String   @db.Char(64)
+  evidenceType  String   @db.VarChar(64)
+  submittedAt   DateTime @default(now())
+  submittedById String
+
+  @@index([requestId])
+  @@index([submittedAt])
+}
+
+/// Record of result delivery for a completed privacy request. Stores only a
+/// result commitment and delivery metadata — never the delivered data.
+model PrivacyRequestDelivery {
+  id             String   @id @default(cuid())
+  requestId      String
+  request        PrivacyRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  /// SHA-256 commitment to the delivered result; raw result never stored.
+  resultHash     String   @db.Char(64)
+  deliveryChannel String  @default("download_link")
+  deliveredAt    DateTime @default(now())
+  /// When the delivery link/receipt expires.
+  expiresAt      DateTime
+
+  @@index([requestId])
+  @@index([expiresAt])
+}
