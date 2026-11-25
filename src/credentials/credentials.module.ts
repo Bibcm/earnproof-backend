@@ -4,6 +4,7 @@ import { CredentialSigningKeyringService } from "../common/crypto/credential-sig
 import { CredentialVerificationKeyService } from "../common/crypto/credential-verification-key.service";
 import { CredentialsController } from "./credentials.controller";
 import { CredentialsService } from "./credentials.service";
+import { CommitmentAlgorithmPolicyService } from "./commitment-algorithm-policy.service";
 import { EvidenceBundleService } from "./evidence-bundle.service";
 import { CredentialQuarantineService } from "./credential-quarantine.service";
 import { CredentialQuarantineController } from "./credential-quarantine.controller";
@@ -19,6 +20,7 @@ import { CredentialVerificationKeyTrustPinService } from "./credential-verificat
     CredentialsService,
     CredentialSigningKeyringService,
     CredentialVerificationKeyService,
+    CommitmentAlgorithmPolicyService,
     EvidenceBundleService,
     CredentialQuarantineService,
     CredentialVerificationKeyTrustPinService,

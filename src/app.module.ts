@@ -31,7 +31,10 @@ import { IssuersModule } from "./issuers/issuers.module";
 import { OrganizationsModule } from "./organizations/organizations.module";
 import { DataResidencyModule } from "./organizations/residency/data-residency.module";
 import { PaymentsModule } from "./payments/payments.module";
+import { PermissionModule } from "./permissions/permission.module";
+import { PrivacyModule } from "./privacy/privacy.module";
 import { ProofsModule } from "./proofs/proofs.module";
+import { SessionModule } from "./sessions/session.module";
 import { SchemaImportsModule } from "./schemas/schema-imports.module";
 import { TrustedSourcesModule } from "./trusted-sources/trusted-sources.module";
 import { UsersModule } from "./users/users.module";
@@ -74,7 +77,10 @@ import { SecurityModule } from "./security/security.module";
     DataResidencyModule,
     IssuersModule,
     PaymentsModule,
+    PermissionModule,
+    PrivacyModule,
     ProofsModule,
+    SessionModule,
     CredentialsModule,
     SchemaImportsModule,
     TrustedSourcesModule,
